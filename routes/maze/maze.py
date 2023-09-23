@@ -6,7 +6,7 @@ maze = Blueprint("maze", __name__)
 class MazeSolver:
     def __init__(self, id):
         self.maze = {}
-        self.maze[(0,0)] = 0
+        self.maze[(0,0)] = 1
         self.id = id
         self.current_position = (0,0)
         self.backtrack = []
