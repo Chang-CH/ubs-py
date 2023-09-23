@@ -1,422 +1,559 @@
-import math
+from queue import PriorityQueue
+import sys
 
-from flask import Blueprint, render_template, session, jsonify, request, make_response
+#############################################################################
+######## Piece
+#############################################################################
+class Piece:
+    horiVert = [(-1,0), (0,-1), (1,0), (0,1)]
+    diag = [(1,1), (-1,-1), (1,-1), (-1,1)]
+    knight = [(1,2), (-1,2), (1,-2), (-1,-2), (2,1), (2,-1), (-2,1), (-2,-1)]
+    def __init__(self, position, color):
+        self.position = position
+        self.color = color
+    
+    def moves(self):
+        pass
 
-minichess = Blueprint("minichess", __name__)
+class King(Piece):
+    def __init__(self, position, color):
+        super().__init__(position, color)
+        self.name = "King"
+        self.value = 300
 
-WHITE = True
-BLACK = False
-
-def get_moves_bishop(grid, r, c, player):
-    moves = []
-
-    for i in range(1, 5):
-        new_row = r - i
-        new_col = c - i
-        if new_row < 0 or new_col < 0:
-            break
-        if grid[new_row][new_col] != None and grid[new_row][new_col].player == player:
-            break
-        else:
-            moves.append(((r, c), (new_row, new_col)))
-            if grid[new_row][new_col] != None and grid[new_row][new_col].player != player:
-                break
-
-    for i in range(1, 5):
-        new_row = r + i
-        new_col = c + i
-        if new_row >= 5 or new_col >= 5:
-            break
-        if grid[new_row][new_col] != None and grid[new_row][new_col].player == player:
-            break
-        else:
-            moves.append(((r, c), (new_row, new_col)))
-            if grid[new_row][new_col] != None and grid[new_row][new_col].player != player:
-                break
-
-    for i in range(1, 5):
-        new_row = r + i
-        new_col = c - i
-        if new_row >= 5 or new_col < 0:
-            break
-        if grid[new_row][new_col] != None and grid[new_row][new_col].player == player:
-            break
-        else:
-            moves.append(((r, c), (new_row, new_col)))
-            if grid[new_row][new_col] != None and grid[new_row][new_col].player != player:
-                break
-
-    for i in range(1, 5):
-        new_row = r - i
-        new_col = c + i
-        if new_row < 0 or new_col >= 5:
-            break
-        if grid[new_row][new_col] != None and grid[new_row][new_col].player == player:
-            break
-        else:
-            moves.append(((r, c), (new_row, new_col)))
-            if grid[new_row][new_col] != None and grid[new_row][new_col].player != player:
-                break
-
-    return moves
-
-def get_moves_rook(grid, r, c, player):
-    moves = []
-
-    for i in range(1, 5):
-        new_row = r + i
-        new_col = c
-        if new_row >= 5:
-            break
-
-        if grid[new_row][new_col] != None and grid[new_row][new_col].player == player:
-            break
-        else:
-            moves.append(((r, c), (new_row, new_col)))
-            if grid[new_row][new_col] != None and grid[new_row][new_col].player != player:
-                break
-
-    for i in range(1, 5):
-        new_row = r - i
-        new_col = c
-        if new_row < 0:
-            break
-        if grid[new_row][new_col] != None and grid[new_row][new_col].player == player:
-            break
-        else:
-            moves.append(((r, c), (new_row, new_col)))
-            if grid[new_row][new_col] != None and grid[new_row][new_col].player != player:
-                break
-
-    for i in range(1, 5):
-        new_row = r
-        new_col = c - i
-        if new_col < 0:
-            break
-        if grid[new_row][new_col] != None and grid[new_row][new_col].player == player:
-            break
-        else:
-            moves.append(((r, c), (new_row, new_col)))
-            if grid[new_row][new_col] != None and grid[new_row][new_col].player != player:
-                break
-
-    for i in range(1, 5):
-        new_row = r
-        new_col = c + i
-        if new_col >= 5:
-            break
-        if grid[new_row][new_col] != None and grid[new_row][new_col].player == player:
-            break
-        else:
-            moves.append(((r, c), (new_row, new_col)))
-            if grid[new_row][new_col] != None and grid[new_row][new_col].player != player:
-                break
-
-    return moves
-
-def get_moves_knight(grid, r, c, player):
-    moves = []
-
-    new_row = r+1
-    new_col = c-2
-    if new_row < 5 and new_col >= 0:
-        if grid[new_row][new_col] == None or grid[new_row][new_col].player != player:
-            moves.append(((r, c), (new_row, new_col)))
-    new_row = r+2
-    new_col = c-1
-    if new_row < 5 and new_col >= 0:
-        if grid[new_row][new_col] == None or grid[new_row][new_col].player != player:
-            moves.append(((r, c), (new_row, new_col)))
-
-    new_row = r+1
-    new_col = c+2
-    if new_row < 5 and new_col < 5:
-        if grid[new_row][new_col] == None or grid[new_row][new_col].player != player:
-            moves.append(((r, c), (new_row, new_col)))
-    new_row = r+2
-    new_col = c+1
-    if new_row < 5 and new_col < 5:
-        if grid[new_row][new_col] == None or grid[new_row][new_col].player != player:
-            moves.append(((r, c), (new_row, new_col)))
-
-    new_row = r-1
-    new_col = c-2
-    if new_row >= 0 and new_col >= 0:
-        if grid[new_row][new_col] == None or grid[new_row][new_col].player != player:
-            moves.append(((r, c), (new_row, new_col)))
-    new_row = r-2
-    new_col = c-1
-    if new_row >= 0 and new_col >= 0:
-        if grid[new_row][new_col] == None or grid[new_row][new_col].player != player:
-            moves.append(((r, c), (new_row, new_col)))
-
-    new_row = r-2
-    new_col = c+1
-    if new_row >= 0 and new_col < 5:
-        if grid[new_row][new_col] == None or grid[new_row][new_col].player != player:
-            moves.append(((r, c), (new_row, new_col)))
-    new_row = r-1
-    new_col = c+2
-    if new_row >= 0 and new_col < 5:
-        if grid[new_row][new_col] == None or grid[new_row][new_col].player != player:
-            moves.append(((r, c), (new_row, new_col)))
-
-    return moves
-
-def get_moves_king(grid, r, c, player):
-    moves = []
-
-    new_col = c-1
-    if new_col >= 0:
-        for nr in range(-1, 2):
-            new_row = nr + r
-            if new_row >= 0 and new_row < 5:
-                if grid[new_row][new_col] == None or grid[new_row][new_col].player != player:
-                    moves.append(((r, c), (new_row, new_col)))
-
-    new_col = c+1
-    if new_col < 5:
-        for nr in range(-1, 2):
-            new_row = nr + r
-            if new_row >= 0 and new_row < 5:
-                if grid[new_row][new_col] == None or grid[new_row][new_col].player != player:
-                    moves.append(((r, c), (new_row, new_col)))
-
-    new_row = r-1
-    if new_row >= 0:
-        if grid[new_row][c] == None or grid[new_row][c].player != player:
-            moves.append(((r, c), (new_row, c)))
-
-    new_row = r+1
-    if new_row < 5:
-        if grid[new_row][c] == None or grid[new_row][c].player != player:
-            moves.append(((r, c), (new_row, c)))
-
-    return moves
-
-def get_moves_pawn(grid, r, c, player):
-    moves = []
-
-    if player == 'White':
-        new_row = r+1
-    else:
-        new_row = r-1
-
-    if new_row < 5 and new_row >= 0:
-        if grid[new_row][c] == None:
-            moves.append(((r, c), (new_row, c)))
-
-        if c-1 >= 0:
-            if grid[new_row][c-1] != None and grid[new_row][c-1].player != player:
-                moves.append(((r, c), (new_row, c-1)))
-
-        c+1
-        if c+1 < 5:
-            if grid[new_row][c+1] != None and grid[new_row][c+1].player != player:
-                moves.append(((r, c), (new_row, c+1)))
-
-    return moves
-
-def to_piece(grid, piece):
-    piece_type = piece[0]
-    player = piece[1]
-    if piece_type == 'King':
-        return King(grid, player)
-    elif piece_type == 'Pawn':
-        return Pawn(grid, player)
-    elif piece_type == 'Rook':
-        return Rook(grid, player)
-    elif piece_type == 'Bishop':
-        return Bishop(grid, player)
-    elif piece_type == 'Queen':
-        return Queen(grid, player)
-    elif piece_type == 'Knight':
-        return Knight(grid, player)
-    elif piece_type == 'Ferz':
-        return Ferz(grid, player)
-    elif piece_type == 'Princess':
-        return Princess(grid, player)
-    elif piece_type == 'Empress':
-        return Empress(grid, player)
-
-class Pawn:
-    def __init__(self, grid, player):
-        self.value = 1
-        self.player = player
-        self.grid = grid
-
-    def actions(self, r, c):
-        return get_moves_pawn(self.grid, r, c, self.player)
-
-class King:
-    def __init__(self, grid, player):
-        self.value = 200
-        self.player = player
-        self.grid = grid
-
-    def actions(self, r, c):
-        return get_moves_king(self.grid, r, c, self.player)
-
-class Rook:
-    def __init__(self, grid, player):
+    def moves(self, board):
+        res = []
+        maxWidth = len(board[0])
+        maxHeight = len(board)
+        for x, y in self.horiVert:
+            tempX = x + self.position[0]
+            tempY = y + self.position[1]
+            if tempX >= 0 and tempX < maxHeight and tempY >= 0 and tempY < maxWidth and board[tempX][tempY] != self.color:
+                res.append((tempX,tempY))
+        for x, y in self.diag:
+            tempX = x + self.position[0]
+            tempY = y + self.position[1]
+            if tempX >= 0 and tempX < maxHeight and tempY >= 0 and tempY < maxWidth and board[tempX][tempY] != self.color:
+                res.append((tempX,tempY)) 
+        return res  
+    
+class Rook(Piece):
+    def __init__(self, position, color):
+        super().__init__(position, color)
+        self.name = "Rook"
         self.value = 5
-        self.player = player
-        self.grid = grid
 
-    def actions(self, r, c):
-        return get_moves_rook(self.grid, r, c, self.player)
+    def moves(self, board):
+        res = []
+        maxWidth = len(board[0])
+        maxHeight = len(board)
+        maxDist = max(maxWidth, maxHeight)
+        for x, y in self.horiVert:
+            for dist in range(1,maxDist):
+                tempX = x * dist + self.position[0]
+                tempY = y * dist + self.position[1]
+                if tempX >= 0 and tempX < maxHeight and tempY >= 0 and tempY < maxWidth:
+                    if board[tempX][tempY] != self.color:
+                        if board[tempX][tempY] == opponentColor(self.color):
+                            res.append((tempX,tempY))
+                            break
+                        else:
+                            res.append((tempX,tempY))
+                    elif board[tempX][tempY] == self.color:
+                        break
+        return res
+    
 
-class Bishop:
-    def __init__(self, grid, player):
+class Knight(Piece):
+    def __init__(self, position, color):
+        super().__init__(position, color)
+        self.name = "Knight"
         self.value = 3
-        self.player = player
-        self.grid = grid
 
-    def actions(self, r, c):
-        return get_moves_bishop(self.grid, r, c, self.player)
+    def moves(self, board):
+        res = []
+        maxWidth = len(board[0])
+        maxHeight = len(board)
+        for x, y in self.knight:
+            tempX = x + self.position[0]
+            tempY = y + self.position[1]
+            if tempX >= 0 and tempX < maxHeight and tempY >= 0 and tempY < maxWidth and board[tempX][tempY] != self.color:
+                res.append((tempX,tempY))
+            
+        return res
 
-class Knight:
-    def __init__(self, grid, player):
+class Bishop(Piece):
+    def __init__(self, position, color):
+        super().__init__(position, color)
+        self.name = "Bishop"
         self.value = 3
-        self.player = player
-        self.grid = grid
 
-    def actions(self, r, c):
-        return get_moves_knight(self.grid, r, c, self.player)
-
-class Queen:
-    def __init__(self, grid, player):
+    def moves(self, board):
+        res = []
+        maxWidth = len(board[0])
+        maxHeight = len(board)
+        maxDist = max(maxWidth, maxHeight)
+        for x, y in self.diag:
+            for dist in range(1,maxDist):
+                tempX = x * dist + self.position[0]
+                tempY = y * dist + self.position[1]
+                if tempX >= 0 and tempX < maxHeight and tempY >= 0 and tempY < maxWidth:
+                    if board[tempX][tempY] != self.color:
+                        if board[tempX][tempY] == opponentColor(self.color):
+                            res.append((tempX,tempY))
+                            break
+                        else:
+                            res.append((tempX,tempY))
+                    elif board[tempX][tempY] == self.color:
+                        break
+        return res
+    
+class Queen(Piece):
+    def __init__(self, position, color):
+        super().__init__(position, color)
+        self.name = "Queen"
         self.value = 9
-        self.player = player
-        self.grid = grid
 
-    def actions(self, r, c):
-        return get_moves_bishop(self.grid, r, c, self.player) + get_moves_rook(self.grid, r, c, self.player)
+    def moves(self, board):
+        res = []
+        maxWidth = len(board[0])
+        maxHeight = len(board)
+        maxDist = max(maxWidth, maxHeight)
+        for x, y in self.horiVert:
+            for dist in range(1,maxDist):
+                tempX = x * dist + self.position[0]
+                tempY = y * dist + self.position[1]
+                if tempX >= 0 and tempX < maxHeight and tempY >= 0 and tempY < maxWidth:
+                    if board[tempX][tempY] != self.color:
+                        if board[tempX][tempY] == opponentColor(self.color):
+                            res.append((tempX,tempY))
+                            break
+                        else:
+                            res.append((tempX,tempY))
+                    elif board[tempX][tempY] == self.color:
+                        break
+        for x, y in self.diag:
+            for dist in range(1,maxDist):
+                tempX = x * dist + self.position[0]
+                tempY = y * dist + self.position[1]
+                if tempX >= 0 and tempX < maxHeight and tempY >= 0 and tempY < maxWidth:
+                    if board[tempX][tempY] != self.color:
+                        if board[tempX][tempY] == opponentColor(self.color):
+                            res.append((tempX,tempY))
+                            break
+                        else:
+                            res.append((tempX,tempY))
+                    elif board[tempX][tempY] == self.color:
+                        break
+        return res
+    pass
 
-class Board:
-    def __init__(self, pieces):
-        self.grid = [[None for j in range(5)] for i in range(5)]
-        self.w_king = None
-        self.b_king = None
-        self.pieces = {}
+class Ferz(Piece):
+    def __init__(self, position, color):
+        super().__init__(position, color)
+        self.name = "Ferz"
+        self.value = 2
 
-        for coord in pieces:
-            piece = pieces[coord]
-            parsed_piece = to_piece(self.grid, piece)
+    def moves(self, board):
+        res = []
+        maxWidth = len(board[0])
+        maxHeight = len(board)
+        for x, y in self.diag:
+            tempX = x + self.position[0]
+            tempY = y + self.position[1]
+            if tempX >= 0 and tempX < maxHeight and tempY >= 0 and tempY < maxWidth and board[tempX][tempY] != self.color:
+                res.append((tempX,tempY))
+        return res  
 
-            if piece[0] == "King" and piece[1] == "White":
-                self.w_king = parsed_piece
-            elif piece[0] == "King":
-                self.b_king = parsed_piece
+class Princess(Piece):
+    def __init__(self, position, color):
+        super().__init__(position, color)
+        self.name = "Princess"
+        self.value = 6
 
-            self.grid[coord[0]][coord[1]] = parsed_piece
-            self.pieces[coord] = parsed_piece
+    def moves(self, board):
+        res = []
+        maxWidth = len(board[0])
+        maxHeight = len(board)
+        maxDist = max(maxWidth, maxHeight)
+        for x, y in self.diag:
+            for dist in range(1,maxDist):
+                tempX = x * dist + self.position[0]
+                tempY = y * dist + self.position[1]
+                if tempX >= 0 and tempX < maxHeight and tempY >= 0 and tempY < maxWidth:
+                    if board[tempX][tempY] != self.color:
+                        if board[tempX][tempY] == opponentColor(self.color):
+                            res.append((tempX,tempY))
+                            break
+                        else:
+                            res.append((tempX,tempY))
+                    elif board[tempX][tempY] == self.color:
+                        break
+        for x, y in self.knight:
+            tempX = x  + self.position[0]
+            tempY = y  + self.position[1]
+            if tempX >= 0 and tempX < maxHeight and tempY >= 0 and tempY < maxWidth and board[tempX][tempY] != self.color:
+                res.append((tempX,tempY))
+        return res
+    pass
 
-    def get_value(self):
-        value = 0
-        for coord in self.pieces:
-            if self.pieces[coord].player == 'White':
-                value += self.pieces[coord].value
+class Empress(Piece):
+    def __init__(self, position, color):
+        super().__init__(position, color)
+        self.name = "Empress"
+        self.value = 8
+
+
+    def moves(self, board):
+        res = []
+        maxWidth = len(board[0])
+        maxHeight = len(board)
+        maxDist = max(maxWidth, maxHeight)
+        for x, y in self.horiVert:
+            for dist in range(1,maxDist):
+                tempX = x * dist + self.position[0]
+                tempY = y * dist + self.position[1]
+                if tempX >= 0 and tempX < maxHeight and tempY >= 0 and tempY < maxWidth:
+                    if board[tempX][tempY] != self.color:
+                        if board[tempX][tempY] == opponentColor(self.color):
+                            res.append((tempX,tempY))
+                            break
+                        else:
+                            res.append((tempX,tempY))
+                    elif board[tempX][tempY] == self.color:
+                        break
+        for x, y in self.knight:
+            tempX = x + self.position[0]
+            tempY = y + self.position[1]
+            if tempX >= 0 and tempX < maxHeight and tempY >= 0 and tempY < maxWidth and board[tempX][tempY] != self.color:
+                res.append((tempX,tempY))
+        return res
+
+class Pawn(Piece):
+    def __init__(self, position, color):
+        super().__init__(position, color)
+        self.name = "Pawn"
+        self.value = 1
+
+    def moves(self, board):
+        res = []
+        tempX = self.position[0]
+        tempY = self.position[1]
+        maxWidth = len(board[0])
+        maxHeight = len(board)
+        if self.color == 0:
+            if tempX + 1 < maxHeight and board[tempX + 1][tempY] == -1:
+                res.append((tempX + 1, tempY))
+            if tempX + 1 < maxHeight and tempY - 1 >= 0 and board[tempX+1][tempY -1] == opponentColor(self.color):
+                res.append((tempX + 1, tempY - 1))
+            if tempX + 1 < maxHeight and tempY + 1 < maxWidth and board[tempX+1][tempY + 1] == opponentColor(self.color):
+                res.append((tempX + 1, tempY + 1))
+        else: 
+            if tempX - 1 >= 0 and board[tempX - 1][tempY] == -1:
+                res.append((tempX - 1, tempY))
+            if tempX - 1 >= 0 and tempY - 1 >= 0 and board[tempX- 1][tempY - 1] == opponentColor(self.color):
+                res.append((tempX - 1, tempY - 1))
+            if tempX - 1 >= 0 and tempY + 1 < maxWidth and board[tempX- 1][tempY + 1] == opponentColor(self.color):
+                res.append((tempX - 1, tempY + 1))
+        return res
+
+#############################################################################
+######## State
+#############################################################################
+# Black is 1 White is 0 empty space is -1 
+class State:
+    def __init__(self, gameboard) -> None:
+        self.whitePieces = {}
+        self.blackPieces = {}
+        self.board = [[-1 for _ in range(7)] for _ in range(7)]
+        self.blackKing = {}
+        self.whiteKing = {}
+        for r, c in gameboard.keys():
+            x, y = decode((r,c))
+            piece, player = gameboard[(r,c)]
+            if player == "Black":
+                if piece == "King":
+                    self.blackKing[(x,y)] = createPiece([piece,[x,y]], 1)
+                self.blackPieces[(x,y)] = createPiece([piece,[x,y]], 1)
+                self.board[x][y] = 1
             else:
-                value -= self.pieces[coord].value
+                if piece == "King":
+                    self.whiteKing[(x,y)] = createPiece([piece,[x,y]], 0)
+                self.whitePieces[(x,y)] = createPiece([piece,[x,y]], 0)
+                self.board[x][y] = 0
 
-        return value
-
-    def get_actions(self, turn):
-        moves = []
-        if turn == WHITE:
-            for coord in self.pieces:
-                piece = self.pieces[coord]
-                if piece.player == 'White':
-                    moves += piece.actions(coord[0], coord[1])
+    def get_valid_moves(self, color):
+        res = []
+        if color == 0: # White/ Max
+            for position in self.whitePieces.keys():
+                piece =  self.whitePieces[position]
+                moves = piece.moves(self.board)
+                pieceMoves = list(map(lambda x : (position, x), moves))
+                res.extend(pieceMoves)
         else:
-            for coord in self.pieces:
-                piece = self.pieces[coord]
-                if piece.player == 'Black':
-                    moves += piece.actions(coord[0], coord[1])
-        return moves
-def ab(gameboard):
-    state = Board(gameboard)
-    return minimax(state)
-def minimax(state):
-    value, move = minimax_util(state, WHITE, -99999, 99999, 3)
-    return move
-def minimax_util(state, turn, alpha, beta, depth):
-    if depth == 0 or state.w_king not in state.pieces.values() or state.b_king not in state.pieces.values() or state.w_king == None or state.b_king == None:
-        return (state.get_value(), None)
+            for position in self.blackPieces.keys():
+                piece =  self.blackPieces[position]
+                moves = piece.moves(self.board)
+                pieceMoves = list(map(lambda x : (position, x), moves))
+                res.extend(pieceMoves)
+        return res
 
-    if turn:
-        best_score = -99999
-        best_move = None
-        for action in state.get_actions(turn):
-            from_coord = action[0]
-            to_coord = action[1]
+    def evaluate(self):
+        val = 0
+        for pos in self.whitePieces.keys():
+            val += self.whitePieces[pos].value
+        for pos in self.blackPieces.keys():
+            val -= self.blackPieces[pos].value
+        return val
 
-            piece = state.grid[from_coord[0]][from_coord[1]]
-            old = state.grid[to_coord[0]][to_coord[1]]
+    def isTerminal(self):
+        return len(self.blackKing) == 0 or len(self.whiteKing) == 0
 
-            if old != None:
-                del state.pieces[to_coord]
+    # Gives the move,  followed by the piece that is captured
+    def move(self, fromMove, toMove, color):
+        pieceCaptured = None
+        if color == 0: # White Player
+            oldX, oldY = fromMove
+            newX, newY = toMove
+            #Check if captures a black piece
+            if (newX, newY) in self.blackPieces:
+                if (newX, newY) in self.blackKing:
+                    #Check if captures a king
+                    del self.blackKing[(newX,newY)]
+                pieceCaptured = self.blackPieces[(newX, newY)]
+                del self.blackPieces[(newX,newY)]
+            pieceToMove = self.whitePieces[fromMove]
+            if pieceToMove.name == "King":
+                del self.whiteKing[(oldX, oldY)]
+                self.whiteKing[(newX,newY)] = pieceToMove
+            del self.whitePieces[fromMove]
+            pieceToMove.position = [newX, newY]
+            self.whitePieces[toMove] = pieceToMove
+            #Change the board
+            self.board[newX][newY] = 0
+            self.board[oldX][oldY] = -1
+            return pieceCaptured, pieceToMove, fromMove 
+        else: # Black Player 
+            oldX, oldY = fromMove
+            newX, newY = toMove
+            #Capture a  white piece
+            if (newX, newY) in self.whitePieces:
+                if (newX,newY) in self.whiteKing:
+                    del self.whiteKing[(newX,newY)]
+                pieceCaptured = self.whitePieces[(newX, newY)]
+                del self.whitePieces[(newX,newY)]
+            pieceToMove = self.blackPieces[fromMove]
+            if pieceToMove.name == "King":
+                del self.blackKing[(oldX, oldY)]
+                self.blackKing[(newX,newY)] = pieceToMove
+            del self.blackPieces[fromMove]
+            # King move
+            pieceToMove.position = [newX, newY]
+            self.blackPieces[toMove] = pieceToMove
+            self.board[newX][newY] = 1
+            self.board[oldX][oldY] = -1
+            return pieceCaptured, pieceToMove, fromMove 
 
-            state.grid[to_coord[0]][to_coord[1]] = piece
-            state.grid[from_coord[0]][from_coord[1]] = None
-            del state.pieces[from_coord]
-            state.pieces[to_coord] = piece
+    def unmove(self, pieceCaptured, pieceMoved, fromMove, color):
+        # White player
+        if color == 0:
+            currX, currY = pieceMoved.position
+            x, y = fromMove #Where it came from
+            # No piece taken
+            if pieceCaptured is None:
+                self.board[x][y] = 0
+                #Empty space in new position
+                self.board[currX][currY] = -1
+            else: 
+                self.board[x][y] = 0
+                # Piece placed back there
+                self.board[currX][currY] = 1
+                if pieceCaptured.name == "King":
+                    self.blackKing[(currX,currY)] = pieceCaptured
+                self.blackPieces[(currX,currY)] = pieceCaptured
+            # Delete current location
+            del self.whitePieces[(currX,currY)]
+            pieceMoved.position = [x,y]
+            self.whitePieces[(x, y)]= pieceMoved
+            if pieceMoved.name == "King":
+                #Unmove the king
+                del self.whiteKing[(currX,currY)]
+                self.whiteKing[(x, y)] = pieceMoved
+        else:
+            currX, currY = pieceMoved.position
+            x, y = fromMove #Where it came from
+            # No piece taken
+            if pieceCaptured is None:
+                self.board[x][y] = 1
+                #Empty space in new position
+                self.board[currX][currY] = -1
+            else: 
+                self.board[x][y] = 1
+                # Piece placed back there
+                self.board[currX][currY] = 0
+                if pieceCaptured.name == "King":
+                    self.whiteKing[(currX,currY)] = pieceCaptured
+                self.whitePieces[(currX,currY)] = pieceCaptured
+            # Delete current location
+            del self.blackPieces[(currX,currY)]
+            pieceMoved.position = [x,y]
+            self.blackPieces[(x, y)]= pieceMoved
+            if pieceMoved.name == "King":
+                #Unmove the king
+                del self.blackKing[(currX,currY)]
+                self.blackKing[(x, y)] = pieceMoved
 
-            action_util, _ = minimax_util(
-                state, not turn, alpha, beta, depth - 1)
 
-            if action_util > best_score:
-                best_score = action_util
-                best_move = action
-                alpha = max(alpha, best_score)
-
-            state.grid[to_coord[0]][to_coord[1]] = old
-            state.grid[from_coord[0]][from_coord[1]] = piece
-            del state.pieces[to_coord]
-            state.pieces[from_coord] = piece
-            if old != None:
-                state.pieces[to_coord] = old
-
-            if alpha >= beta:
-                return (best_score, best_move)
-        return (best_score, best_move)
+def maxValue(state, alpha, beta, depth):
+    if depth == 0 or state.isTerminal():
+        return None, state.evaluate()
     else:
-        best_score = 99999
-        best_move = None
-        for action in state.get_actions(turn):
-            from_coord = action[0]
-            to_coord = action[1]
+        bestValue = -float('inf')
+        bestMove = None
+        moves = state.get_valid_moves(0)
+        # ((fromX, fromY) , (toX, toY))
+        for move in moves:
+            currPos, nextPos = move
+            pieceCaptured, pieceToMove, fromMove = state.move(currPos, nextPos,0) #White Player
+            tempMove = saveMove(currPos, nextPos)
+            move, newValue = minValue(state, alpha, beta, depth - 1)
+            state.unmove(pieceCaptured, pieceToMove, fromMove, 0)
+            if newValue > bestValue:
+                bestMove = tempMove
+                bestValue = newValue
+                alpha = max(alpha, bestValue)
+            if bestValue >= beta:
+                break
+        return bestMove, bestValue
 
-            piece = state.grid[from_coord[0]][from_coord[1]]
-            old = state.grid[to_coord[0]][to_coord[1]]
+def minValue(state, alpha, beta, depth):
+    if depth == 0 or state.isTerminal():
+        return None, state.evaluate()
+    else:    
+        bestValue = float('inf')
+        bestMove = None
+        moves = state.get_valid_moves(1)
+        for move in moves:
+            currPos, nextPos = move
+            pieceCaptured, pieceToMove, fromMove = state.move(currPos, nextPos,1) #Black Player
+            tempMove = saveMove(currPos, nextPos)
+            move, newValue = maxValue(state, alpha, beta, depth - 1)
+            state.unmove(pieceCaptured, pieceToMove, fromMove, 1)
+            if newValue < bestValue:
+                bestMove = tempMove
+                bestValue = newValue
+                beta = min(beta, bestValue)
+            if bestValue <= alpha:
+                break
+        return bestMove, bestValue
 
-            if old != None:
-                del state.pieces[to_coord]
+#Implement your minimax with alpha-beta pruning algorithm here.
+def ab(gameboard):
 
-            state.grid[to_coord[0]][to_coord[1]] = piece
-            state.grid[from_coord[0]][from_coord[1]] = None
-            del state.pieces[from_coord]
-            state.pieces[to_coord] = piece
+    state = State(gameboard)
+    alpha = - float('inf')
+    beta = float('inf')
+    move, next_state = maxValue(state, alpha, beta, 3)
+    return move
 
-            action_util, _ = minimax_util(
-                state, not turn, alpha, beta, depth - 1)
 
-            if action_util < best_score:
-                best_score = action_util
-                best_move = action
-                beta = min(beta, best_score)
+def calculate(state, piece, position):
+    x,y = piece.position
+    if state.board[x][y] == -1:
+        return -piece.value
+    else:
+        return -1
 
-            state.grid[to_coord[0]][to_coord[1]] = old
-            state.grid[from_coord[0]][from_coord[1]] = piece
-            del state.pieces[to_coord]
-            state.pieces[from_coord] = piece
-            if old != None:
-                state.pieces[to_coord] = old
+def saveMove(fromMove, toMove):
+    return (encode(fromMove), encode(toMove))
 
-            if alpha >= beta:
-                return (best_score, best_move)
-        return (best_score, best_move)
+def encode(position):
+    x, y = position
+    return (chr(y + 97), x)
+
+def decode(position):
+    y, x = position
+    return (x , ord(y)- 97)
+
+#############################################################################
+######## Parser function and helper functions
+#############################################################################
+### DO NOT EDIT/REMOVE THE FUNCTION BELOW###
+# Return number of rows, cols, grid containing obstacles and step costs of coordinates, enemy pieces, own piece, and goal positions
+def parse(testcase):
+    handle = open(testcase, "r")
+
+    get_par = lambda x: x.split(":")[1]
+    rows = int(get_par(handle.readline())) # Integer
+    cols = int(get_par(handle.readline())) # Integer
+    gameboard = {}
+    
+    enemy_piece_nums = get_par(handle.readline()).split()
+    num_enemy_pieces = 0 # Read Enemy Pieces Positions
+    for num in enemy_piece_nums:
+        num_enemy_pieces += int(num)
+
+    handle.readline()  # Ignore header
+    for i in range(num_enemy_pieces):
+        line = handle.readline()[1:-2]
+        coords, piece = add_piece(line)
+        gameboard[coords] = (piece, "Black")    
+
+    own_piece_nums = get_par(handle.readline()).split()
+    num_own_pieces = 0 # Read Own Pieces Positions
+    for num in own_piece_nums:
+        num_own_pieces += int(num)
+
+    handle.readline()  # Ignore header
+    for i in range(num_own_pieces):
+        line = handle.readline()[1:-2]
+        coords, piece = add_piece(line)
+        gameboard[coords] = (piece, "White")    
+
+    return rows, cols, gameboard
+
+def opponentColor(color):
+    return [1,0][color]
+
+def add_piece( comma_seperated) -> Piece:
+    piece, ch_coord = comma_seperated.split(",")
+    r, c = from_chess_coord(ch_coord)
+    return [(r,c), piece]
+
+def from_chess_coord(ch_coord):
+    return (int(ch_coord[1:]), ord(ch_coord[0]) - 97)
+
+
+def createPiece(piece, color):
+    pieceName = piece[0]
+    coord = piece[1]
+    letter = pieceName[0]
+    if letter == "Q":
+        return Queen(coord, color)
+    elif letter == "B":
+        return Bishop(coord, color)
+    elif letter == "R":
+        return Rook(coord, color)
+    elif letter == "K":
+        if pieceName[1] == "n":
+            return Knight(coord, color)
+        else:
+            return King(coord, color)
+    elif letter == "F":
+        return Ferz(coord, color)
+    elif letter == "P":
+        if pieceName[1] == "r":
+            return Princess(coord, color)
+        else:
+            return Pawn(coord, color)
+    else:
+        return Empress(coord, color)
+
+# You may call this function if you need to set up the board
+def setUpBoard():
+    config = sys.argv[1]
+    rows, cols, gameboard = parse(config)
+
 
 piecemap = {
     "\u2659": ("Pawn", "White"),
@@ -432,6 +569,7 @@ piecemap = {
     "\u2654": ("King", "White"),
     "\u265A": ("King", "Black"),
 }
+
 def parse(testcase):
 
     rows = 5
@@ -476,7 +614,16 @@ def studentAgent(testcase):
 
     return res
 
-@minichess.route("/minichess", methods=["POST"])
-def getCommon():
-    board = request.json["board"]
-    return jsonify(studentAgent(board))
+# @minichess.route("/minichess", methods=["POST"])
+# def getCommon():
+#     board = request.json["board"]
+#     return jsonify(studentAgent(board))
+
+
+print(studentAgent([
+        ["♜|0|0", "♞|0|1", "♝|0|2", "♛|0|3", "♚|0|4"],
+        ["♟|1|0", "♟|1|1", "♟|1|2", "♟|1|3", "♟|1|4"],
+        ["", "", "", "", ""],
+        ["♙|3|0", "♙|3|1", "♙|3|2", "♙|3|3", "♙|3|4"],
+        ["♖|4|0", "♘|4|1", "♗|4|2", "♕|4|3", "♔|4|4"]
+    ]))

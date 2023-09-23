@@ -5,6 +5,7 @@ from routes.ctf.payload_crackme import payload_crackme
 from routes.ctf.payload_stack import payload_stack
 from routes.ctf.payload_shellcode import payload_shellcode
 from routes.chess.minichess import minichess
+from routes.maze.maze import maze
 
 import logging
 
@@ -23,6 +24,7 @@ app.register_blueprint(payload_crackme)
 app.register_blueprint(payload_stack)
 app.register_blueprint(payload_shellcode)
 app.register_blueprint(minichess)
+app.register_blueprint(maze)
 
 # logger = logging.getLogger()
 # handler = logging.StreamHandler()
