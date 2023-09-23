@@ -61,12 +61,12 @@ class MazeSolver:
             self.maze[self.current_position] = 1
         return bestMove
 
-solver = {id: "QWE"}
+solver = MazeSolver("a")
 
 @maze.route("/maze", methods=["POST"])
 def getCommon():
     global solver
-    
+
     mazeId = request.json["mazeId"]
     nearby = request.json["nearby"]
     mazeWidth = request.json["mazeWidth"]
