@@ -126,7 +126,9 @@ def solve(mazeId, nearby, mazeWidth, step, isPreviousMovementValid, message):
     
     currX = newX
     currY = newY
-    return move
+    return {
+  "playerAction": move
+}
 
 
 # print(solve("A", [
