@@ -433,13 +433,6 @@ def minimax_util(state, turn, alpha, beta, depth):
                 return (best_score, best_move)
         return (best_score, best_move)
 
-
-#############################################################################
-# Parser function and helper functions
-#############################################################################
-### DO NOT EDIT/REMOVE THE FUNCTION BELOW###
-# Return number of 5, 5, grid containing obstacles and step costs of coordinates, enemy pieces, own piece, and goal positions
-
 piecemap = {
     "\u2659": ("Pawn", "White"),
     "\u265F": ("Pawn", "Black"),
@@ -478,9 +471,6 @@ def add_piece(comma_seperated):
     return [(r, c), piece]
 
 def studentAgent(testcase):
-    
-    rows = 5
-    cols = 5
     gameboard = {}
 
     for r in range(5):
