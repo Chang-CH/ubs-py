@@ -50,15 +50,19 @@ class MazeSolver:
         if bestMove == "up":
             self.current_position = (self.current_position[0], self.current_position[1] - 1)
             self.maze[self.current_position] = 1
+            self.backtrack.append("down")
         elif bestMove == "down":
             self.current_position = (self.current_position[0], self.current_position[1] + 1)
             self.maze[self.current_position] = 1
+            self.backtrack.append("up")
         elif bestMove == "left":
             self.current_position = (self.current_position[0] - 1, self.current_position[1])
             self.maze[self.current_position] = 1
+            self.backtrack.append("right")
         elif bestMove == "right":
             self.current_position = (self.current_position[0] + 1, self.current_position[1])
             self.maze[self.current_position] = 1
+            self.backtrack.append("left")
         return bestMove
 
 solver = MazeSolver("a")
