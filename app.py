@@ -4,6 +4,7 @@ from routes.challenge2.greedymonkey import greedymonkey
 from routes.ctf.payload_crackme import payload_crackme
 from routes.ctf.payload_stack import payload_stack
 from routes.ctf.payload_shellcode import payload_shellcode
+from routes.chess.minichess import minichess
 
 import logging
 
@@ -21,6 +22,7 @@ app.register_blueprint(greedymonkey)
 app.register_blueprint(payload_crackme)
 app.register_blueprint(payload_stack)
 app.register_blueprint(payload_shellcode)
+app.register_blueprint(minichess)
 
 # logger = logging.getLogger()
 # handler = logging.StreamHandler()

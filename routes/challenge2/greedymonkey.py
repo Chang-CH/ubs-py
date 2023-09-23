@@ -33,6 +33,4 @@ def getCommon():
     w = request.json["w"]
     v = request.json["v"]
     f = request.json["f"]
-    # r = make_response(getFruit(w, v, f), 200)
-    # r.mimetype = "text/plain"
     return jsonify(getFruit(w, v, f))

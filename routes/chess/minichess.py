@@ -1,4 +1,5 @@
 import math
+
 from flask import Blueprint, render_template, session, jsonify, request, make_response
 
 minichess = Blueprint("minichess", __name__)
@@ -59,7 +60,6 @@ def get_moves_bishop(grid, r, c, player):
 
     return moves
 
-
 def get_moves_rook(grid, r, c, player):
     moves = []
 
@@ -114,7 +114,6 @@ def get_moves_rook(grid, r, c, player):
 
     return moves
 
-
 def get_moves_knight(grid, r, c, player):
     moves = []
 
@@ -164,7 +163,6 @@ def get_moves_knight(grid, r, c, player):
 
     return moves
 
-
 def get_moves_king(grid, r, c, player):
     moves = []
 
@@ -196,7 +194,6 @@ def get_moves_king(grid, r, c, player):
 
     return moves
 
-
 def get_moves_pawn(grid, r, c, player):
     moves = []
 
@@ -220,7 +217,6 @@ def get_moves_pawn(grid, r, c, player):
 
     return moves
 
-
 def to_piece(grid, piece):
     piece_type = piece[0]
     player = piece[1]
@@ -243,7 +239,6 @@ def to_piece(grid, piece):
     elif piece_type == 'Empress':
         return Empress(grid, player)
 
-
 class Pawn:
     def __init__(self, grid, player):
         self.value = 1
@@ -252,7 +247,6 @@ class Pawn:
 
     def actions(self, r, c):
         return get_moves_pawn(self.grid, r, c, self.player)
-
 
 class King:
     def __init__(self, grid, player):
@@ -272,7 +266,6 @@ class Rook:
     def actions(self, r, c):
         return get_moves_rook(self.grid, r, c, self.player)
 
-
 class Bishop:
     def __init__(self, grid, player):
         self.value = 3
@@ -282,7 +275,6 @@ class Bishop:
     def actions(self, r, c):
         return get_moves_bishop(self.grid, r, c, self.player)
 
-
 class Knight:
     def __init__(self, grid, player):
         self.value = 3
@@ -291,7 +283,6 @@ class Knight:
 
     def actions(self, r, c):
         return get_moves_knight(self.grid, r, c, self.player)
-
 
 class Queen:
     def __init__(self, grid, player):
@@ -344,18 +335,12 @@ class Board:
                 if piece.player == 'Black':
                     moves += piece.actions(coord[0], coord[1])
         return moves
-
-
 def ab(gameboard):
     state = Board(gameboard)
     return minimax(state)
-
-
 def minimax(state):
     value, move = minimax_util(state, WHITE, -99999, 99999, 3)
     return move
-
-
 def minimax_util(state, turn, alpha, beta, depth):
     if depth == 0 or state.w_king not in state.pieces.values() or state.b_king not in state.pieces.values() or state.w_king == None or state.b_king == None:
         return (state.get_value(), None)
@@ -447,7 +432,6 @@ piecemap = {
     "\u2654": ("King", "White"),
     "\u265A": ("King", "Black"),
 }
-
 def parse(testcase):
 
     rows = 5
@@ -464,12 +448,10 @@ def parse(testcase):
             gameboard[(c,r)] = piece
 
     return rows, cols, gameboard
-
 def add_piece(comma_seperated):
     piece, ch_coord = comma_seperated.split(",")
     r, c = ch_coord
     return [(r, c), piece]
-
 def studentAgent(testcase):
     gameboard = {}
 
@@ -494,16 +476,7 @@ def studentAgent(testcase):
 
     return res
 
-
 @minichess.route("/minichess", methods=["POST"])
 def getCommon():
     board = request.json["board"]
     return jsonify(studentAgent(board))
-
-# print(studentAgent([
-#         ["♜|0|0", "♞|0|1", "♝|0|2", "♛|0|3", "♚|0|4"],
-#         ["♟|1|0", "♟|1|1", "♟|1|2", "♟|1|3", "♟|1|4"],
-#         ["", "", "", "", ""],
-#         ["♙|3|0", "♙|3|1", "♙|3|2", "♙|3|3", "♙|3|4"],
-#         ["♖|4|0", "♘|4|1", "♗|4|2", "♕|4|3", "♔|4|4"]
-#     ]))
