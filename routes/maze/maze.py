@@ -65,6 +65,8 @@ solver = {id: "QWE"}
 
 @maze.route("/maze", methods=["POST"])
 def getCommon():
+    global solver
+    
     mazeId = request.json["mazeId"]
     nearby = request.json["nearby"]
     mazeWidth = request.json["mazeWidth"]
