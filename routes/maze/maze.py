@@ -1,7 +1,7 @@
 
 from flask import Blueprint, render_template, session, jsonify, request, make_response
 
-maze = Blueprint("minichess", __name__)
+maze = Blueprint("maze", __name__)
 
 class MazeSolver:
     def __init__(self, id):
