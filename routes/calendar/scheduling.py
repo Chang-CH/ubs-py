@@ -5,9 +5,9 @@ scheduling = Blueprint("calendar-scheduling", __name__)
 
 def max_earnings(lessons):
     lessons.sort(key=lambda x: x["potentialEarnings"], reverse=True)
-    days = {"monday": 0, "tuesday": 0, "wednesday": 0, "thursday": 0, "friday": 0}
+    days = {"monday": 0, "tuesday": 0, "wednesday": 0, "thursday": 0, "friday": 0, "saturday": 0, "sunday": 0}
     total_earnings = 0
-    selected_lessons = {"monday": [], "tuesday": [], "wednesday": [], "thursday": [], "friday": []}
+    selected_lessons = {"monday": [], "tuesday": [], "wednesday": [], "thursday": [], "friday": [], "saturday": [], "sunday": []}
 
     for lesson in lessons:
         for day in lesson["availableDays"]:
