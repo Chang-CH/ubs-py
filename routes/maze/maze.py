@@ -10,19 +10,6 @@ deads = {}
 currX = 0
 currY = 0
 
-# {
-#   "mazeId": "3f184088-31fd-4231-a404-f76e257b8d0e",
-#   "nearby": [
-#     [0, 0, 0],
-#     [0, 3, 1],
-#     [0, 0, 1]
-#   ],
-#   "mazeWidth": 4,
-#   "step": 0,
-#   "isPreviousMovementValid": false,
-#   "message": ""
-# }
-
 moves = ["up", "down", "left", "right"]
 offset = {
     "up": [1, 0],
