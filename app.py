@@ -1,7 +1,8 @@
 from flask import Flask
 from routes.challenge1.lazydev import lazydev
 from routes.challenge2.greedymonkey import greedymonkey
-from routes.ctf.ctf import payload_crackme
+from routes.ctf.payload_crackme import payload_crackme
+from routes.ctf.payload_stack import payload_stack
 
 import logging
 
@@ -17,6 +18,7 @@ def default_route():
 app.register_blueprint(lazydev)
 app.register_blueprint(greedymonkey)
 app.register_blueprint(payload_crackme)
+app.register_blueprint(payload_stack)
 
 # logger = logging.getLogger()
 # handler = logging.StreamHandler()
