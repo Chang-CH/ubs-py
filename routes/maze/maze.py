@@ -6,12 +6,30 @@ maze = Blueprint("maze", __name__)
 class MazeSolver:
     def __init__(self, id):
         self.maze = {}
-        self.maze[(0,0)] = 1
+        self.maze[(0,0)] = 1 # maybe try 0
         self.id = id
         self.current_position = (0,0)
         self.backtrack = []
+        self.wecookin = None
+        self.cooked = 0
 
     def find_direction(self, nearby):
+        if self.wecookin != None:
+            move = "left"
+            if len(self.cooked) > self.cooked:
+                move = self.wecookin[self.cooked]
+            
+            self.cooked += 1
+
+            if move == "up":                    
+                return "down"
+            elif move == "down":                    
+                return "up"
+            elif move == "left":                    
+                return "right"
+            elif move == "right":                    
+                return "left"
+
         # Define the directions for moving up, down, left, and right
         directions = [(0, -1, "up"), (0, 1, "down"), (-1, 0, "left"), (1, 0, "right")]
 
@@ -26,8 +44,19 @@ class MazeSolver:
                 continue
 
             if nearby[cy + dy][cx + dx] == 3:
-                bestMove = direction
-                break
+                self.wecookin = self.backtrack
+
+                if direction == "up":                    
+                    self.wecookin.append("down")
+                elif direction == "down":                    
+                    self.wecookin.append("up")
+                elif direction == "left":                    
+                    self.wecookin.append("right")
+                elif direction == "right":                    
+                    self.wecookin.append("left")
+                
+                self.backtrack = []
+                return "respawn"
 
             if (x,y) in self.maze:
                 continue
