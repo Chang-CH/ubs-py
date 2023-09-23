@@ -6,7 +6,7 @@ from routes.ctf.payload_stack import payload_stack
 from routes.ctf.payload_shellcode import payload_shellcode
 from routes.chess.minichess import minichess
 from routes.maze.maze import maze
-from routes.calendar.scheduling import maze
+from routes.calendar.scheduling import scheduling
 
 import logging
 
