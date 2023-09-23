@@ -3,45 +3,34 @@ from flask import Blueprint, render_template, session, jsonify, request, make_re
 
 scheduling = Blueprint("calendar-scheduling", __name__)
 
+# def max_earnings(lessons):
+#     lessons.sort(key=lambda x: x["potentialEarnings"], reverse=True)
+#     days = {"monday": 0, "tuesday": 0, "wednesday": 0, "thursday": 0, "friday": 0}
+#     total_earnings = 0
+#     selected_lessons = {"monday": [], "tuesday": [], "wednesday": [], "thursday": [], "friday": []}
+
+#     for lesson in lessons:
+#         for day in lesson["availableDays"]:
+#             if lesson["duration"] + days[day] <= 12:
+#                 days[day] += lesson["duration"]
+#                 total_earnings += lesson["potentialEarnings"]
+#                 selected_lessons[day].append(lesson["lessonRequestId"])
+#                 break
+
+#     return selected_lessons
+
 def max_earnings(lessons):
-    lessons.sort(key=lambda x: x["potentialEarnings"], reverse=True)
-    days = {"monday": 0, "tuesday": 0, "wednesday": 0, "thursday": 0, "friday": 0}
-    total_earnings = 0
-    selected_lessons = {"monday": [], "tuesday": [], "wednesday": [], "thursday": [], "friday": []}
+    max_earnings = [0] * 13  # Initialize a list to store maximum earnings for each possible duration
+    selected_lessons = [[] for _ in range(13)]  # Initialize a list to store selected lessons for each duration
 
     for lesson in lessons:
-        for day in lesson["availableDays"]:
-            if lesson["duration"] + days[day] <= 12:
-                days[day] += lesson["duration"]
-                total_earnings += lesson["potentialEarnings"]
-                selected_lessons[day].append(lesson["lessonRequestId"])
-                break
+        for duration in range(12, lesson["duration"] - 1, -1):
+            # Check if adding the current lesson improves earnings
+            if max_earnings[duration - lesson["duration"]] + lesson["potentialEarnings"] > max_earnings[duration]:
+                max_earnings[duration] = max_earnings[duration - lesson["duration"]] + lesson["potentialEarnings"]
+                selected_lessons[duration] = selected_lessons[duration - lesson["duration"]] + [lesson["lessonRequestId"]]
 
-    return selected_lessons
-
-lessons = [
-    {
-        "lessonRequestId": "LR1",
-        "duration": 1,
-        "potentialEarnings": 100,
-        "availableDays": ["monday", "wednesday"]
-    }, {
-        "lessonRequestId": "LR2",
-        "duration": 2,
-        "potentialEarnings": 50,
-        "availableDays": ["monday"]
-    }, {
-        "lessonRequestId": "LR3",
-        "duration": 12,
-        "potentialEarnings": 1000,
-        "availableDays": ["wednesday"]
-    }, {
-        "lessonRequestId": "LR4",
-        "duration": 13,
-        "potentialEarnings": 10000,
-        "availableDays": ["friday"]
-    }
-]
+    return max_earnings[12], selected_lessons[12]
 
 
 
