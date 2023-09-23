@@ -16,7 +16,7 @@ class MazeSolver:
     def find_direction(self, nearby):
         if self.wecookin != None:
             move = "left"
-            if len(self.cooked) > self.cooked:
+            if len(self.wecookin) > self.cooked:
                 move = self.wecookin[self.cooked]
             
             self.cooked += 1
