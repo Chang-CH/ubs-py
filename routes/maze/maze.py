@@ -1,137 +1,67 @@
+
 from flask import Blueprint, render_template, session, jsonify, request, make_response
-maze = Blueprint("maze", __name__)
 
-oldMaze = ""
-endX = None
-endY = None
-trace = []
-saved = {}
-deads = {}
-currX = 0
-currY = 0
+maze = Blueprint("minichess", __name__)
 
-moves = ["up", "down", "left", "right"]
-offset = {
-    "up": [1, 0],
-    "down": [-1, 0],
-    "left": [0, -1],
-    "right": [0,1]
-}
+class MazeSolver:
+    def __init__(self, id):
+        self.maze = {}
+        self.maze[(0,0)] = 0
+        self.id = id
+        self.current_position = (0,0)
+        self.backtrack = []
 
-# 0 	wall cell 	x
-# 1 	empty cell 	v
-# 2 	spawn cell 	v
-# 3 	end cell 	v
+    def find_direction(self, nearby):
+        # Define the directions for moving up, down, left, and right
+        directions = [(0, -1, "up"), (0, 1, "down"), (-1, 0, "left"), (1, 0, "right")]
 
-def solve(mazeId, nearby, mazeWidth, step, isPreviousMovementValid, message):
-    global oldMaze
-    global endX
-    global endY
-    global trace
-    global saved
-    global deads
-    global currX
-    global currY
+        cx = 1
+        cy = 1
 
-    if mazeId != oldMaze:
-        trace = []
-        oldMaze = mazeId
-        endX = None
-        endY = None
-        saved = {}
-        deads = {}
-        currX = 0
-        currY = 0
-    
-    isDead = True
-    oldMove = "respawn"
-    newX = 1
-    newY = 0
-    move = "down"
+        bestMove = "respawn"
+        for dx, dy, direction in directions:
+            x, y = self.current_position[0] + dx, self.current_position[1] + dy
 
-    # prepare to backtrack
-    if len(trace) > 0:
-        oldMove = trace[-1]
-        newX = currX
-        newY = currY
-        move = "respawn"
-        if oldMove == "up":
-            move = "down"
-            newY -= 1
-        elif oldMove == "down":
-            move = "up"
-            newY += 1
-        elif oldMove == "left":
-            move = "right"
-            newX += 1
-        elif oldMove == "right":
-            move = "left"
-            newX -= 1
-    
-    currG = 0
-    if (currX, currY) in saved:
-        currG = saved[(currX, currY)] + 1
+            if nearby[cy + dy][cx + dx] == 0:
+                continue
 
-    for i in moves:
-        offsetX = offset[i][0]
-        offsetY = offset[i][1]
-        x = currX + offsetX
-        y = currY + offsetY
+            if nearby[cy + dy][cx + dx] == 3:
+                bestMove = direction
+                break
 
+            if (x,y) in self.maze:
+                continue
+            
+            bestMove = direction
+
+        if bestMove == "respawn" and len(self.backtrack) > 0:
+            bestMove = self.backtrack.pop()
+            if bestMove == "up":
+                self.current_position = (self.current_position[0], self.current_position[1] + 1)
+            elif bestMove == "down":
+                self.current_position = (self.current_position[0], self.current_position[1] - 1)
+            elif bestMove == "left":
+                self.current_position = (self.current_position[0] - 1, self.current_position[1])
+            elif bestMove == "right":
+                self.current_position = (self.current_position[0] + 1, self.current_position[1])
+            return bestMove
         
-        # square is a dead end
-        if (x,y) in deads:
-            continue
-        # square is a wall
-        if nearby[offsetX + 1][offsetY + 1] == 0:
-            continue
-        
-        # end cell
-        if nearby[offsetX + 1][offsetY + 1] == 3:
-            endX = x
-            endY = y
-            newX = x
-            newY = y
-            move = i
-            isDead = False
-            return move #TODO: terminate later
-        
-        # shorter path, or not visited
-        #  or saved[(x,y)] > currG ignore shorter for now
-        if nearby[offsetX + 1][offsetY + 1] == 1 and (x,y) not in saved:
-            isDead = False
-            saved[(x,y)] = currG
-            newX = x
-            newY = y
-            move = i
-            break
-    
-    # pop trace!!!!
-    if isDead:
-        deads[(currX, currY)] = True
-        trace.pop()
-    
-    currX = newX
-    currY = newY
-    return {
-  "playerAction": move
-}
 
+        if bestMove == "up":
+            self.current_position = (self.current_position[0], self.current_position[1] - 1)
+            self.maze[self.current_position] = 1
+        elif bestMove == "down":
+            self.current_position = (self.current_position[0], self.current_position[1] + 1)
+            self.maze[self.current_position] = 1
+        elif bestMove == "left":
+            self.current_position = (self.current_position[0] - 1, self.current_position[1])
+            self.maze[self.current_position] = 1
+        elif bestMove == "right":
+            self.current_position = (self.current_position[0] + 1, self.current_position[1])
+            self.maze[self.current_position] = 1
+        return bestMove
 
-# print(solve("A", [
-#     [0, 0, 0],
-#     [0, 3, 1],
-#     [0, 0, 0]
-#   ], None, None, None, None))
-# print(solve("A", [
-#     [0, 0, 0],
-#     [3, 1, 0],
-#     [0, 0, 0]
-#   ], None, None, None, None))
-
-    
-
-
+solver = {id: "QWE"}
 
 @maze.route("/maze", methods=["POST"])
 def getCommon():
@@ -141,10 +71,55 @@ def getCommon():
     step = request.json["step"]
     isPreviousMovementValid = request.json["isPreviousMovementValid"]
     message = request.json["message"]
-    return jsonify(solve(mazeId,
-nearby,
-mazeWidth,
-step,
-isPreviousMovementValid,
-message
-))
+    if mazeId != solver.id:
+        solver = MazeSolver(mazeId)
+
+    return jsonify(solver.find_direction(nearby))
+
+
+# # Example usage:
+# solver = MazeSolver("asd")
+
+# # Update the maze state with the first nearby matrix
+# nearby1 = [
+#     [0, 0, 0],
+#     [0, 2, 1],
+#     [0, 0, 1]
+# ]
+
+# # Find the first direction to move
+# direction1 = solver.find_direction(nearby1)
+# print(direction1)  # Output: "down"
+
+# # Update the maze state with the second nearby matrix
+# nearby2 = [
+#     [0, 0, 0],
+#     [2, 1, 0],
+#     [0, 1, 0]
+# ]
+
+# # Find the second direction to move
+# direction2 = solver.find_direction(nearby2)
+# print(direction2)  # Output: "left"
+
+# # Update the maze state with the second nearby matrix
+# nearby3 = [
+#     [2, 1, 0],
+#     [0, 1, 0],
+#     [3, 1, 1],
+# ]
+
+# # Find the second direction to move
+# direction3 = solver.find_direction(nearby3)
+# print(direction3)  # Output: "left"
+
+# # Update the maze state with the second nearby matrix
+# nearby4 = [
+#     [0, 1, 0],
+#     [3, 1, 1],
+#     [0, 1, 0],
+# ]
+
+# # Find the second direction to move
+# direction4 = solver.find_direction(nearby4)
+# print(direction4)  # Output: "left"
