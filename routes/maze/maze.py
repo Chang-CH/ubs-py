@@ -75,8 +75,9 @@ def getCommon():
     message = request.json["message"]
     if mazeId != solver.id:
         solver = MazeSolver(mazeId)
-
-    return jsonify(solver.find_direction(nearby))
+    
+    res = {"playerAction": solver.find_direction(nearby)}
+    return jsonify(res)
 
 
 # # Example usage:
